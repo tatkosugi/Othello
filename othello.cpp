@@ -34,20 +34,27 @@ char		Col[8][3]  = {"Ç`","Ça","Çb","Çc","Çd","Çe","Çf","Çg" };
 char		Row[8][3]  = {"ÇP","ÇQ","ÇR","ÇS","ÇT","ÇU","ÇV","ÇW" };
 char		Koma[3][3] = {". ","Åú","ÅZ"};
 int			Diff[10];
-int			StackPtr;
-int			DirNum[500],DirNumPtr[70];
+int			StackPtr,NextTurn;
+int			NumDir[500],NumDirPtr[70];
 //
 
 
 int		RowCol2Adr(int row,int col);
 void	DispBan();
 void	CalcDiff();
-void	PutCheck(int x,int y,int BxW);
+int		PutCheck(int );
+void	PutCheckAll();
+void	PutExec(int Adr);
+
+
 
 //------
 int		main(int argc,char *argv[])
 {
 	int		x,y;
+	char	GetLoc[20];
+
+	CalcDiff();
 
 	for (x=0;x<8;x++)
 		for(y=0;y<8;y++)
@@ -59,10 +66,17 @@ int		main(int argc,char *argv[])
 	Ban[RowCol2Adr(4,3)]	= WHITE;
 
 	StackPtr	= 0;
-	DirNumPtr[StackPtr]	= 0;
+	NumDirPtr[StackPtr]	= 0;
+	NextTurn	= BLACK;
 
 	DispBan();
-	CalcDiff();
+
+//	PutCheckAll();
+//	printf("Input the location (ex. D3) : ");
+//	scanf("%s",GetLoc);
+	PutExec(RowCol2Adr(2,4));
+	DispBan();
+
 
 	return EXIT_SUCCESS;
 }
@@ -91,6 +105,89 @@ void	CalcDiff()
 
 }
 //------
+void	PutCheckAll()
+{
+	int x,y;
+	
+	for(x=0;x<8;x++){
+		for(y=0;y<8;y++)
+			if (PutCheck(RowCol2Adr(x,y)) == 1)
+				printf("X");
+			else
+				printf(".");
+		printf("\n");
+	}
+}
+//------
+void	PutExec(int Adr)
+{
+	int		AdrWork,Dir,DirPtr,NDPtr,RvsCtr,i;
+	
+	DirPtr	= 0;
+	NDPtr	= NumDirPtr[StackPtr];
+	Ban[Adr]	= NextTurn;
+	while(DirPtr < 8)
+	{
+		Dir	= Diff[DirPtr];
+		AdrWork	= Adr + Dir;
+		if (Ban[AdrWork] == 3 - NextTurn){
+			AdrWork += Dir;
+			RvsCtr	= 1;
+			while(((Ban[AdrWork] & 3) != 0) && (0 < RvsCtr)){
+				if (Ban[AdrWork] == NextTurn){
+					NumDir[NDPtr ++]	= RvsCtr;
+					NumDir[NDPtr ++]	= Dir;
+					AdrWork	= Adr + Dir;
+					for (i=0;i<RvsCtr;i++){
+						Ban[AdrWork]	= NextTurn;
+						AdrWork += Dir;
+					}
+					RvsCtr	= -1;
+				}
+				else {
+					AdrWork += Dir;
+					RvsCtr	++;
+				}
+			}
+		}
+		DirPtr	++;
+	}
+	NumDir[NDPtr++]	= -1;
+	NumDirPtr[StackPtr]	= NDPtr;
+	
+	NextTurn	= 3 - NextTurn;
+	StackPtr ++;
+}
+//------
+int		PutCheck(int Adr)
+{
+	int		IsPutOK,AdrWork,Dir,DirPtr;
+	
+	IsPutOK		= 0;
+	
+	if (Ban[Adr] == 0)
+	{
+		DirPtr	= 0;
+		while((IsPutOK == 0) && (DirPtr<8))
+		{
+			Dir	= Diff[DirPtr];
+			AdrWork	= Adr + Dir;
+			if (Ban[AdrWork] == 3 - NextTurn){
+				AdrWork += Dir;
+				while(((Ban[AdrWork] & 3) != 0)  && ! IsPutOK){
+					if (Ban[AdrWork] == NextTurn)
+						IsPutOK	= 1;
+					else
+						AdrWork += Dir;
+				}
+			}
+			DirPtr	++;
+		}
+	}
+	
+	return		IsPutOK;
+}
+//------
 void	DispBan()
 {
 	int		x,y;
@@ -104,6 +201,18 @@ void	DispBan()
 		printf("%s",Row[y]);
 		for (x=0;x<8;x++)
 			printf("%s",Koma[Ban[RowCol2Adr(y,x)]]);
+		switch (y){
+		case 0:
+			printf("\tOthello sample program Ver 1.00 [Mar.07.2019]");
+			break;
+		case 2:
+			printf("\tNext turn is ");
+			if (NextTurn == 1)
+				printf("Black");
+			else
+				printf("White");
+			break;
+		}
 		printf("\n");
 	}
 	
