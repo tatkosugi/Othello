@@ -42,6 +42,7 @@ int			StackPtr,NextTurn;
 int			NumDir[500],NumDirPtr[70];
 int			AddrList[70];
 int			PutOKList[30];
+int			BlackCtr,WhiteCtr;
 
 
 //
@@ -366,9 +367,25 @@ int		PutCheck(int Adr)
 	return		IsPutOK;
 }
 //------
+void	CountBW()
+{
+	int 	i;
+	
+	BlackCtr	= 0;
+	WhiteCtr	= 0;
+	for (i=12;i <= AddrList[59];i++){
+		if (Ban[i] == BLACK)
+			BlackCtr	++;
+		if (Ban[i] == WHITE)
+			WhiteCtr	++;
+	}
+}
+//------
 void	DispBan()
 {
 	int		x,y;
+	
+	CountBW();
 	
 	printf("  ");
 	for (x=0;x<8;x++)
@@ -389,6 +406,12 @@ void	DispBan()
 				printf("Black");
 			else
 				printf("White");
+			break;
+		case 4:
+			printf("\tBlack : %d",BlackCtr);
+			break;
+		case 5:
+			printf("\tWhite : %d",WhiteCtr);
 			break;
 		}
 		printf("\n");
