@@ -26,6 +26,10 @@
 #define		WHITE			2
 #define		NULL			0
 
+#define		CTRL_REQ_WAIT	90
+#define		CTRL_REQ_EXIT	99
+
+#define		ADR_PASS		98
 
 //
 //
@@ -36,6 +40,10 @@ char		Koma[3][3] = {". ","●","〇"};
 int			Diff[10];
 int			StackPtr,NextTurn;
 int			NumDir[500],NumDirPtr[70];
+int			AddrList[70];
+int			PutOKList[30];
+
+
 //
 
 
@@ -48,6 +56,11 @@ void	PutExec(int Adr);
 void	DispND();
 int		GetMove();
 char	ToUpper(char cc);
+unsigned long 	xor128();
+void	MakeAdrList();
+void	EraseExec();
+int		MakePutOKList();
+int		ComThink();
 
 
 
@@ -62,14 +75,17 @@ int		main(int argc,char *argv[])
 	for (x=0;x<8;x++)
 		for(y=0;y<8;y++)
 			Ban[RowCol2Adr(x,y)]	= NULL;
+
+	MakeAdrList();
+	StackPtr	= 0;
+	NumDirPtr[StackPtr]	= 0;
 	
 	Ban[RowCol2Adr(3,3)]	= BLACK;
 	Ban[RowCol2Adr(4,4)]	= BLACK;
 	Ban[RowCol2Adr(3,4)]	= WHITE;
 	Ban[RowCol2Adr(4,3)]	= WHITE;
 
-	StackPtr	= 0;
-	NumDirPtr[StackPtr]	= 0;
+	StackPtr	++;
 	NextTurn	= BLACK;
 
 	printf("\n");
@@ -81,16 +97,65 @@ int		main(int argc,char *argv[])
 //	DispND();
 	
 	mv = 0;
-	while (mv < 90){
-		mv	= GetMove();
-		if (mv < 90)
+	while (mv < 99){
+		if (NextTurn == BLACK)
+			mv	= GetMove();
+		else
+			mv	= ComThink();
+			
+		if (mv < 90 ){
 			if ( PutCheck(mv) == 1 ){
 				PutExec(mv);
+				//DispND();
 				DispBan();
 			}
+		}
+		else if(mv == ADR_PASS){
+			PutExec(mv);
+			DispBan();
+		}
+		else if((mv == CTRL_REQ_WAIT) && (1<StackPtr)){
+			printf("待った　！\n");
+//			DispND();
+			EraseExec();
+			DispBan();
+		}
+
 	}
 
 	return EXIT_SUCCESS;
+}
+//------
+int		ComThink()
+{
+	int		RndAdr,nn,RndX;
+
+	nn	= MakePutOKList();		// 着手可能リスト作成
+	
+	if (nn == 0)
+		RndAdr	= ADR_PASS;
+	else {
+		RndX	= 15 & xor128();
+		while (nn <= RndX)
+			RndX -= nn;
+		RndAdr	= PutOKList[RndX];
+	}
+	
+	return RndAdr;
+}
+//------
+int		MakePutOKList()
+{
+	int		nn,i;
+	
+	nn	= 0;
+	for (i=0;i<60;i++)
+		if (PutCheck(AddrList[i]) == 1){
+			PutOKList[nn]	= AddrList[i];
+			nn ++;
+		}
+
+	return nn;
 }
 //------
 char		ToUpper(char cc)
@@ -131,9 +196,9 @@ int		GetMove()
 	}
 	adr = RowCol2Adr(LocR,LocC);
 	if (f_wait == 1)
-		adr	= 90;
+		adr	= CTRL_REQ_WAIT;
 	if (f_exit == 1)
-		adr	= 99;	
+		adr	= CTRL_REQ_EXIT;	
 //	printf ("%d %d %d %d\n",LocC,LocR,f_wait,adr);
 //	if (f_pass == 1)
 //		adr = 99;
@@ -169,9 +234,9 @@ void	DispND()
 {
 	int		i;
 
-	for(i=0;i<NumDirPtr[StackPtr-1];i++)
-	{
-		if(0 < NumDir[i])
+	printf("Stack : %d  NDPtr : %d\n",StackPtr,NumDirPtr[StackPtr-1]);
+	for(i=0;i<NumDirPtr[StackPtr-1];i++) {
+		if( NumDir[i] != -99)
 			printf("%2d , ",NumDir[i]);
 		else
 			printf("\n");
@@ -192,41 +257,69 @@ void	PutCheckAll()
 	}
 }
 //------
+void	EraseExec()
+{
+	int		AdrWork,Dir,Adr,NDPtr,RvsCtr,i;
+
+	StackPtr --;
+	
+	NDPtr	= NumDirPtr[StackPtr-1];
+	Adr		= NumDir[NDPtr ++];		// location
+	if (Adr != ADR_PASS){
+		Ban[Adr]	= 0;
+
+		RvsCtr	= NumDir[NDPtr ++];		// 
+		while(0<RvsCtr){
+			Dir	= NumDir[NDPtr ++];
+			AdrWork	= Adr + Dir;
+			for(i=0;i<RvsCtr;i++){
+				Ban[AdrWork]	= NextTurn;
+				AdrWork += Dir;
+			}
+			RvsCtr	= NumDir[NDPtr ++];		// 
+		}
+	}
+
+	NextTurn	= 3 - NextTurn;
+}
+//------
 void	PutExec(int Adr)
 {
 	int		AdrWork,Dir,DirPtr,NDPtr,RvsCtr,i;
 	
 	DirPtr	= 0;
-	NDPtr	= NumDirPtr[StackPtr];
+	NDPtr	= NumDirPtr[StackPtr-1];
 	NumDir[NDPtr ++]	= Adr;		// location
-	Ban[Adr]	= NextTurn;
-	while(DirPtr < 8)
-	{
-		Dir	= Diff[DirPtr];
-		AdrWork	= Adr + Dir;
-		if (Ban[AdrWork] == 3 - NextTurn){
-			AdrWork += Dir;
-			RvsCtr	= 1;
-			while(((Ban[AdrWork] & 3) != 0) && (0 < RvsCtr)){
-				if (Ban[AdrWork] == NextTurn){
-					NumDir[NDPtr ++]	= RvsCtr;
-					NumDir[NDPtr ++]	= Dir;
-					AdrWork	= Adr + Dir;
-					for (i=0;i<RvsCtr;i++){
-						Ban[AdrWork]	= NextTurn;
-						AdrWork += Dir;
+	if (Adr != ADR_PASS){
+		Ban[Adr]	= NextTurn;
+		while(DirPtr < 8)
+		{
+			Dir	= Diff[DirPtr];
+			AdrWork	= Adr + Dir;
+			if (Ban[AdrWork] == 3 - NextTurn){
+				AdrWork += Dir;
+				RvsCtr	= 1;
+				while(((Ban[AdrWork] & 3) != 0) && (0 < RvsCtr)){
+					if (Ban[AdrWork] == NextTurn){
+						NumDir[NDPtr ++]	= RvsCtr;
+						NumDir[NDPtr ++]	= Dir;
+						AdrWork	= Adr + Dir;
+						for (i=0;i<RvsCtr;i++){
+							Ban[AdrWork]	= NextTurn;
+							AdrWork += Dir;
+						}
+						RvsCtr	= -1;
 					}
-					RvsCtr	= -1;
-				}
-				else {
-					AdrWork += Dir;
-					RvsCtr	++;
+					else {
+						AdrWork += Dir;
+						RvsCtr	++;
+					}
 				}
 			}
+			DirPtr	++;
 		}
-		DirPtr	++;
 	}
-	NumDir[NDPtr++]	= -1;
+	NumDir[NDPtr++]	= -99;
 	NumDirPtr[StackPtr]	= NDPtr;
 	
 	NextTurn	= 3 - NextTurn;
@@ -292,6 +385,36 @@ void	DispBan()
 	printf("\n");
 	
 }
+
+//------
+void	MakeAdrList()
+{
+	int		x,y,i;
+	
+	i=0;
+	for (x=0;x<8;x++)
+		for(y=0;y<8;y++){
+			if ((x<3 || 4<x) || (y<3 || 4<y)){
+				AddrList[i]	= RowCol2Adr(x,y);
+				i++;
+			}
+		}
+	
+//	for(i=0;i<60;i++)
+//		printf("%3d,",AddrList[i]);
+//	printf("\n");
+}
+//------
+
+unsigned long xor128(){ 
+    static unsigned long x=123456789,y=362436069,z=521288629,w=88675123; 
+    unsigned long t; 
+    t=(x^(x<<11));
+    x=y;
+    y=z;
+    z=w;
+    return( w=(w^(w>>19))^(t^(t>>8)) ); 
+} 
 //*******************************************************************
 //*                              E N D                              *
 //*******************************************************************
