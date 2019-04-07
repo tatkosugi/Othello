@@ -2,7 +2,7 @@
 // *                                                                 *
 // *          新春初売り  オセロ                                     *
 // *                                                                 *
-// *              Programed by T.Kosugi    [Dec 17.1996]             *
+// *              Programed by T.Kosugi    [Mar 07.2019]             *
 // *                                                                 *
 // *                                                                 *
 // *   1.02  1996.12.17     First release                            *
@@ -45,13 +45,16 @@ void	CalcDiff();
 int		PutCheck(int );
 void	PutCheckAll();
 void	PutExec(int Adr);
+void	DispND();
+int		GetMove();
+char	ToUpper(char cc);
 
 
 
 //------
 int		main(int argc,char *argv[])
 {
-	int		x,y;
+	int		x,y,mv;
 	char	GetLoc[20];
 
 	CalcDiff();
@@ -69,16 +72,73 @@ int		main(int argc,char *argv[])
 	NumDirPtr[StackPtr]	= 0;
 	NextTurn	= BLACK;
 
+	printf("\n");
 	DispBan();
 
 //	PutCheckAll();
-//	printf("Input the location (ex. D3) : ");
-//	scanf("%s",GetLoc);
-	PutExec(RowCol2Adr(2,4));
-	DispBan();
-
+//	PutExec(RowCol2Adr(2,4));
+//	DispBan();
+//	DispND();
+	
+	mv = 0;
+	while (mv < 90){
+		mv	= GetMove();
+		if (mv < 90)
+			if ( PutCheck(mv) == 1 ){
+				PutExec(mv);
+				DispBan();
+			}
+	}
 
 	return EXIT_SUCCESS;
+}
+//------
+char		ToUpper(char cc)
+{
+	char res;
+
+	if ('a'<=cc && cc<='z')
+		res = cc + 'A'- 'a';
+	else
+		res = cc;
+
+	return res;
+}
+//------
+int		GetMove()
+{
+	char	GetLoc[20],*ptr,f_wait,f_exit,LocR,LocC,adr;
+	
+	printf("Input the location (ex. D3) : ");
+	scanf("%s",GetLoc);
+	printf("\n");
+	ptr	= GetLoc;
+	f_wait	= 0;
+//	f_pass	= 0;
+	LocR	= 0;
+	LocC	= 0;
+	while (*ptr != 0){
+		*ptr	= ToUpper(*ptr);
+		if (('A' <= *ptr) && (*ptr <= 'H'))
+			LocC	= *ptr - 'A';
+		if (('1' <= *ptr) && (*ptr <= '8'))
+			LocR	= *ptr - '1';
+		if (*ptr == 'W')
+			f_wait	= 1;
+		if (*ptr == 'X')
+			f_exit	= 1;
+		ptr ++;
+	}
+	adr = RowCol2Adr(LocR,LocC);
+	if (f_wait == 1)
+		adr	= 90;
+	if (f_exit == 1)
+		adr	= 99;	
+//	printf ("%d %d %d %d\n",LocC,LocR,f_wait,adr);
+//	if (f_pass == 1)
+//		adr = 99;
+
+	return	adr;
 }
 //------
 int		RowCol2Adr(int row,int col)
@@ -105,6 +165,19 @@ void	CalcDiff()
 
 }
 //------
+void	DispND()
+{
+	int		i;
+
+	for(i=0;i<NumDirPtr[StackPtr-1];i++)
+	{
+		if(0 < NumDir[i])
+			printf("%2d , ",NumDir[i]);
+		else
+			printf("\n");
+	}
+}
+//------
 void	PutCheckAll()
 {
 	int x,y;
@@ -125,6 +198,7 @@ void	PutExec(int Adr)
 	
 	DirPtr	= 0;
 	NDPtr	= NumDirPtr[StackPtr];
+	NumDir[NDPtr ++]	= Adr;		// location
 	Ban[Adr]	= NextTurn;
 	while(DirPtr < 8)
 	{
@@ -192,7 +266,7 @@ void	DispBan()
 {
 	int		x,y;
 	
-	printf("\n　");
+	printf("  ");
 	for (x=0;x<8;x++)
 		printf("%s",Col[x]);
 	printf("\n");
@@ -203,7 +277,7 @@ void	DispBan()
 			printf("%s",Koma[Ban[RowCol2Adr(y,x)]]);
 		switch (y){
 		case 0:
-			printf("\tOthello sample program Ver 1.00 [Mar.07.2019]");
+			printf("\tOthello Ver 1.00 [Mar.07.2019]");
 			break;
 		case 2:
 			printf("\tNext turn is ");
@@ -215,6 +289,7 @@ void	DispBan()
 		}
 		printf("\n");
 	}
+	printf("\n");
 	
 }
 //*******************************************************************
