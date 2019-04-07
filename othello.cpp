@@ -33,7 +33,7 @@
 
 //
 //
-int			Ban[100];
+int			Ban[120];
 char		Col[8][3]  = {"Ç`","Ça","Çb","Çc","Çd","Çe","Çf","Çg" };
 char		Row[8][3]  = {"ÇP","ÇQ","ÇR","ÇS","ÇT","ÇU","ÇV","ÇW" };
 char		Koma[3][3] = {". ","Åú","ÅZ"};
@@ -72,12 +72,12 @@ int		main(int argc,char *argv[])
 	char	GetLoc[20];
 
 	CalcDiff();
+	MakeAdrList();
 
-	for (x=0;x<8;x++)
-		for(y=0;y<8;y++)
+	for (x=0;x<9;x++)
+		for(y=0;y<9;y++)
 			Ban[RowCol2Adr(x,y)]	= NULL;
 
-	MakeAdrList();
 	StackPtr	= 0;
 	NumDirPtr[StackPtr]	= 0;
 	
@@ -85,7 +85,27 @@ int		main(int argc,char *argv[])
 	Ban[RowCol2Adr(4,4)]	= BLACK;
 	Ban[RowCol2Adr(3,4)]	= WHITE;
 	Ban[RowCol2Adr(4,3)]	= WHITE;
+//
+//	Ban[RowCol2Adr(0,3)]	= WHITE;
+//	Ban[RowCol2Adr(0,4)]	= WHITE;
+//	Ban[RowCol2Adr(0,5)]	= WHITE;
+//
+//	Ban[RowCol2Adr(1,4)]	= WHITE;
+//	Ban[RowCol2Adr(1,5)]	= BLACK;
+//
+//	Ban[RowCol2Adr(2,3)]	= WHITE;
+//	Ban[RowCol2Adr(2,4)]	= WHITE;
+//	Ban[RowCol2Adr(2,5)]	= WHITE;
+//	Ban[RowCol2Adr(2,6)]	= WHITE;
+//
+//	Ban[RowCol2Adr(3,3)]	= WHITE;
+//	Ban[RowCol2Adr(3,4)]	= BLACK;
+//	Ban[RowCol2Adr(3,5)]	= BLACK;
+//
+//	Ban[RowCol2Adr(4,3)]	= WHITE;
+//	Ban[RowCol2Adr(4,4)]	= BLACK;
 
+//
 	StackPtr	++;
 	NextTurn	= BLACK;
 
@@ -100,6 +120,7 @@ int		main(int argc,char *argv[])
 	mv 		= 0;
 	mvOld	= 0;
 	while (mv < 99){
+		//PutCheckAll();
 		mvOld	= mv;
 		if (NextTurn == BLACK)
 			mv	= GetMove();
@@ -341,8 +362,15 @@ void	PutExec(int Adr)
 int		PutCheck(int Adr)
 {
 	int		IsPutOK,AdrWork,Dir,DirPtr;
+//	int		DbgFlag;
 	
 	IsPutOK		= 0;
+	
+//	DbgFlag	= 0;
+//	if(Adr == RowCol2Adr(3,7)){
+//		printf("spe\n");
+//		DbgFlag	 =1;
+//	}
 	
 	if (Ban[Adr] == 0)
 	{
@@ -351,7 +379,9 @@ int		PutCheck(int Adr)
 		{
 			Dir	= Diff[DirPtr];
 			AdrWork	= Adr + Dir;
-			if (Ban[AdrWork] == 3 - NextTurn){
+//			if (DbgFlag ==1)
+//				printf("%3d  %3d  %3d  \n",Dir,AdrWork,DirPtr);
+			if (Ban[AdrWork] == (3 - NextTurn)){
 				AdrWork += Dir;
 				while(((Ban[AdrWork] & 3) != 0)  && ! IsPutOK){
 					if (Ban[AdrWork] == NextTurn)
