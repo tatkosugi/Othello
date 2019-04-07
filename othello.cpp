@@ -67,7 +67,7 @@ int		ComThink();
 //------
 int		main(int argc,char *argv[])
 {
-	int		x,y,mv;
+	int		x,y,mv,mvOld;
 	char	GetLoc[20];
 
 	CalcDiff();
@@ -96,12 +96,18 @@ int		main(int argc,char *argv[])
 //	DispBan();
 //	DispND();
 	
-	mv = 0;
+	mv 		= 0;
+	mvOld	= 0;
 	while (mv < 99){
+		mvOld	= mv;
 		if (NextTurn == BLACK)
 			mv	= GetMove();
 		else
 			mv	= ComThink();
+		
+		if (mvOld == ADR_PASS && mv == ADR_PASS){
+			mv	= CTRL_REQ_EXIT;
+		}
 			
 		if (mv < 90 ){
 			if ( PutCheck(mv) == 1 ){
@@ -172,7 +178,7 @@ char		ToUpper(char cc)
 //------
 int		GetMove()
 {
-	char	GetLoc[20],*ptr,f_wait,f_exit,LocR,LocC,adr;
+	char	GetLoc[20],*ptr,f_wait,f_exit,LocR,LocC,adr,f_pass;
 	
 	printf("Input the location (ex. D3) : ");
 	scanf("%s",GetLoc);
@@ -192,6 +198,8 @@ int		GetMove()
 			f_wait	= 1;
 		if (*ptr == 'X')
 			f_exit	= 1;
+		if (*ptr == 'P')
+			f_pass	= 1;
 		ptr ++;
 	}
 	adr = RowCol2Adr(LocR,LocC);
@@ -199,9 +207,12 @@ int		GetMove()
 		adr	= CTRL_REQ_WAIT;
 	if (f_exit == 1)
 		adr	= CTRL_REQ_EXIT;	
+	if (f_pass == 1)
+		adr	= ADR_PASS;	
 //	printf ("%d %d %d %d\n",LocC,LocR,f_wait,adr);
 //	if (f_pass == 1)
 //		adr = 99;
+
 
 	return	adr;
 }
