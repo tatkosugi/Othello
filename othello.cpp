@@ -33,7 +33,7 @@
 
 //
 //
-int			Ban[120];
+int			Ban[120],BanScore[120];
 char		Col[8][3]  = {"Ç`","Ça","Çb","Çc","Çd","Çe","Çf","Çg" };
 char		Row[8][3]  = {"ÇP","ÇQ","ÇR","ÇS","ÇT","ÇU","ÇV","ÇW" };
 char		Koma[3][3] = {". ","Åú","ÅZ"};
@@ -43,6 +43,7 @@ int			NumDir[500],NumDirPtr[70];
 int			AddrList[70];
 int			PutOKList[30];
 int			BlackCtr,WhiteCtr;
+int			ScoreTable[4][4] = { { 20,0,0,0 } , { -6,-6,0,0} , {4,8,12,0} , {6,10,18,0} };
 
 
 //
@@ -61,8 +62,9 @@ unsigned long 	xor128();
 void	MakeAdrList();
 void	EraseExec();
 int		MakePutOKList();
-int		ComThink();
-
+int		ComThink(int no);
+int		ComThink_Random();
+void	InitBScore();
 
 
 //------
@@ -70,6 +72,7 @@ int		main(int argc,char *argv[])
 {
 	int		x,y,mv,mvOld;
 	char	GetLoc[20];
+	time_t	ti;
 
 	CalcDiff();
 	MakeAdrList();
@@ -105,7 +108,13 @@ int		main(int argc,char *argv[])
 //	Ban[RowCol2Adr(4,3)]	= WHITE;
 //	Ban[RowCol2Adr(4,4)]	= BLACK;
 
+	ti	= 0x3ff & time(NULL);
+	for (int i=0;i<ti;i++)
+		xor128();
 //
+	InitBScore();
+
+
 	StackPtr	++;
 	NextTurn	= BLACK;
 
@@ -125,7 +134,7 @@ int		main(int argc,char *argv[])
 		if (NextTurn == BLACK)
 			mv	= GetMove();
 		else
-			mv	= ComThink();
+			mv	= ComThink(1);
 		
 		if (mvOld == ADR_PASS && mv == ADR_PASS){
 			mv	= CTRL_REQ_EXIT;
@@ -154,7 +163,20 @@ int		main(int argc,char *argv[])
 	return EXIT_SUCCESS;
 }
 //------
-int		ComThink()
+int		ComThink(int no)
+{
+	int		ret;
+	
+	switch (no){
+		case 1:
+			ret	= ComThink_Random();
+		break;
+	}
+	
+	return	ret;
+}
+//------
+int		ComThink_Random()
 {
 	int		RndAdr,nn,RndX;
 
@@ -184,6 +206,38 @@ int		MakePutOKList()
 		}
 
 	return nn;
+}
+//------
+void	InitBScore()
+{
+	int		x,y,Adr;
+	
+	for (x=0;x<4;x++)
+		for (y=0;y<=x;y++){
+			Adr	= RowCol2Adr(x,y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(y,x);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - x ,y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - y ,x);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(x,7 - y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(y,7 - x);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - x,7 - y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - y,7 - x);
+			BanScore[Adr]	= ScoreTable[x][y];
+		}
+		
+	for (y=0;y<8;y++){
+		for (x=0;x<8;x++)
+			printf("%3d ,",BanScore[RowCol2Adr(x,y)]);
+		printf("\n");
+	}
+
 }
 //------
 char		ToUpper(char cc)
@@ -428,7 +482,7 @@ void	DispBan()
 			printf("%s",Koma[Ban[RowCol2Adr(y,x)]]);
 		switch (y){
 		case 0:
-			printf("\tOthello Ver 1.00 [Mar.07.2019]");
+			printf("\tOthello Ver 1.00 [Apr.07.2019]");
 			break;
 		case 2:
 			printf("\tNext turn is ");
