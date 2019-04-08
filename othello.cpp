@@ -65,6 +65,7 @@ int		MakePutOKList();
 int		ComThink(int no);
 int		ComThink_Random();
 void	InitBScore();
+int		ComThink_RScore();
 
 
 //------
@@ -132,9 +133,10 @@ int		main(int argc,char *argv[])
 		//PutCheckAll();
 		mvOld	= mv;
 		if (NextTurn == BLACK)
-			mv	= GetMove();
-		else
 			mv	= ComThink(1);
+//			mv	= GetMove();
+		else
+			mv	= ComThink(2);
 		
 		if (mvOld == ADR_PASS && mv == ADR_PASS){
 			mv	= CTRL_REQ_EXIT;
@@ -168,8 +170,11 @@ int		ComThink(int no)
 	int		ret;
 	
 	switch (no){
-		case 1:
-			ret	= ComThink_Random();
+	case 1:
+		ret	= ComThink_Random();
+		break;
+	case 2:
+		ret	= ComThink_RScore();
 		break;
 	}
 	
@@ -192,6 +197,28 @@ int		ComThink_Random()
 	}
 	
 	return RndAdr;
+}
+//------
+int		ComThink_RScore()
+{
+	int		RetAdr,nn,RndX,Score,MaxScore,i;
+
+	nn	= MakePutOKList();		// íÖéËâ¬î\ÉäÉXÉgçÏê¨
+	
+	if (nn == 0)
+		RetAdr	= ADR_PASS;
+	else {
+		MaxScore	= -9999;
+		for (i=0;i<nn;i++){
+			Score	= BanScore[PutOKList[i]] + ( 3 &xor128());
+			if (MaxScore < Score){
+				RetAdr		= PutOKList[i];
+				MaxScore	= Score;
+			}
+		}
+	}
+	
+	return RetAdr;
 }
 //------
 int		MakePutOKList()
