@@ -66,6 +66,9 @@ int		ComThink(int no);
 int		ComThink_Random();
 void	InitBScore();
 int		ComThink_RScore();
+int		IsLastPass();
+void	CountBW();
+void	SortPutOKList(int *AdrList);
 
 
 //------
@@ -438,6 +441,86 @@ void	PutExec(int Adr)
 	
 	NextTurn	= 3 - NextTurn;
 	StackPtr ++;
+}
+//------
+//
+//	必勝読み
+//
+//今回着手可能位置なし、かつ前回着手可能位置なしのとき評価値を返す
+//
+//今回の着手可能リストを作成する。
+//
+//着手可能リストを並べ替える。
+//
+//	調べた結果が +1 以上となれば、+1を評価値として返す。
+//  すべて調べても 0 以下であれば、0 を評価値として返す
+//
+//
+//
+int			GetWinEval()		// 戻り値は評価結果
+{
+	int		nn,EvalMax,i,Eval;
+	int		SortAdrList[20];
+
+	nn	= MakePutOKList();		// 着手可能リスト作成
+
+	if (nn == 0) {
+		if (IsLastPass()){
+			CountBW();
+			if (NextTurn == BLACK)
+				EvalMax	= BlackCtr - WhiteCtr;
+			else
+				EvalMax	= WhiteCtr - BlackCtr;
+		}
+		else {
+			PutExec(ADR_PASS);
+			EvalMax	= - GetWinEval();
+			EraseExec();
+		}
+	}
+	else {
+		SortPutOKList(SortAdrList);
+		EvalMax	= -99;
+		i = 0;
+		while (i<=nn){
+			PutExec(SortAdrList[i]);
+			Eval	= - GetWinEval();
+			if (EvalMax < Eval)
+				EvalMax	= Eval;
+			EraseExec();
+			if (EvalMax < 1)
+				i++;
+			else
+				i = 99;
+		}
+	}
+	
+	return	EvalMax;
+
+}
+//------
+int		IsLastPass()
+{
+	int		Adr,NDPtr;
+	
+	NDPtr	= NumDirPtr[StackPtr-2];
+	Adr		= NumDir[NDPtr];		// location
+	if (Adr == ADR_PASS)
+		return	1;
+	else
+		return	0;
+}
+//------
+void	SortPutOKList(int *AdrList)
+{
+	int		i;
+	
+	i=0;
+	while(0 < PutOKList[i]){
+		AdrList[i]	= PutOKList[i];
+		i++;
+	}
+	AdrList[i]	= PutOKList[i];
 }
 //------
 int		PutCheck(int Adr)
