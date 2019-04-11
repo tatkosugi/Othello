@@ -39,12 +39,13 @@ char		Row[8][3]  = {"ÇP","ÇQ","ÇR","ÇS","ÇT","ÇU","ÇV","ÇW" };
 char		Koma[3][3] = {". ","Åú","ÅZ"};
 int			Diff[10];
 int			StackPtr,NextTurn;
-int			NumDir[500],NumDirPtr[70];
+int			NumDir[500],NumDirPtr[80];
 int			AddrList[70];
 int			PutOKList[30];
 int			BlackCtr,WhiteCtr;
 int			ScoreTable[4][4] = { { 20,0,0,0 } , { -6,-6,0,0} , {4,8,12,0} , {6,10,18,0} };
-
+int			TraceMode;
+int			AdrMax;
 
 //
 
@@ -64,12 +65,13 @@ void	EraseExec();
 int		MakePutOKList();
 int		ComThink(int no);
 int		ComThink_Random();
+int		ComThink_RandWin();
 void	InitBScore();
 int		ComThink_RScore();
 int		IsLastPass();
 void	CountBW();
-void	SortPutOKList(int *AdrList);
-
+int			GetWinEval();
+void	SortPutOKList(int *AdrList,int nn);
 
 //------
 int		main(int argc,char *argv[])
@@ -118,6 +120,7 @@ int		main(int argc,char *argv[])
 //
 	InitBScore();
 
+	TraceMode	=  1;
 
 	StackPtr	++;
 	NextTurn	= BLACK;
@@ -135,11 +138,13 @@ int		main(int argc,char *argv[])
 	while (mv < 99){
 		//PutCheckAll();
 		mvOld	= mv;
+		if (StackPtr == 40)
+			TraceMode	=  0;
 		if (NextTurn == BLACK)
 			mv	= ComThink(1);
 //			mv	= GetMove();
 		else
-			mv	= ComThink(2);
+			mv	= ComThink(3);
 		
 		if (mvOld == ADR_PASS && mv == ADR_PASS){
 			mv	= CTRL_REQ_EXIT;
@@ -179,9 +184,38 @@ int		ComThink(int no)
 	case 2:
 		ret	= ComThink_RScore();
 		break;
+	case 3:
+		ret	= ComThink_RandWin();
+		break;
 	}
 	
 	return	ret;
+}
+//------
+int		ComThink_RandWin()
+{
+	int		RndAdr,nn,RndX;
+
+	nn	= MakePutOKList();		// íÖéËâ¬î\ÉäÉXÉgçÏê¨
+	
+	if (nn == 0)
+		RndAdr	= ADR_PASS;
+	else {
+		if (StackPtr <48){
+			RndX	= 15 & xor128();
+			while (nn <= RndX)
+				RndX -= nn;
+			RndAdr	= PutOKList[RndX];
+		}
+		else{
+			int		winval;
+			winval	= GetWinEval();
+			printf("My score is %d\n",winval);
+			RndAdr	= AdrMax;
+		}
+	}
+	
+	return RndAdr;
 }
 //------
 int		ComThink_Random()
@@ -459,12 +493,18 @@ void	PutExec(int Adr)
 //
 int			GetWinEval()		// ñﬂÇËílÇÕï]âøåãâ 
 {
-	int		nn,EvalMax,i,Eval;
+	int		nn,EvalMax,i,Eval,LocalMax;
 	int		SortAdrList[20];
+
+	
+//	char	GetLoc[10];
+//	printf(">>stack = %d :",StackPtr);
+//	scanf("%s",GetLoc);
 
 	nn	= MakePutOKList();		// íÖéËâ¬î\ÉäÉXÉgçÏê¨
 
 	if (nn == 0) {
+//		printf(" pass\n");
 		if (IsLastPass()){
 			CountBW();
 			if (NextTurn == BLACK)
@@ -477,26 +517,47 @@ int			GetWinEval()		// ñﬂÇËílÇÕï]âøåãâ 
 			EvalMax	= - GetWinEval();
 			EraseExec();
 		}
+		LocalMax	= ADR_PASS;
 	}
 	else {
-		SortPutOKList(SortAdrList);
+		SortPutOKList(SortAdrList,nn);
+
+//		for (i=0;i<nn;i++)
+//			printf("%3d  ",SortAdrList[i]);
+//		printf(" is source and ");
+
 		EvalMax	= -99;
+		LocalMax	= SortAdrList[0];
 		i = 0;
-		while (i<=nn){
+		while (i<nn){
 			PutExec(SortAdrList[i]);
+
 			Eval	= - GetWinEval();
-			if (EvalMax < Eval)
-				EvalMax	= Eval;
 			EraseExec();
+			
+			if (EvalMax < Eval){
+				EvalMax	= Eval;
+				LocalMax	= SortAdrList[i];
+			}
 			if (EvalMax < 1)
 				i++;
 			else
 				i = 99;
+
+//			printf("select : %3d , ",LocalMax);
+//			printf("Score is  : %3d \n",EvalMax);
 		}
 	}
-	
-	return	EvalMax;
 
+//	for (i=0;i<nn;i++)
+//		printf("> %3d  ",SortAdrList[i]);
+//	printf("\n(Best adr = %d) \n",LocalMax);
+//	printf("<< stack = %d \n",StackPtr);
+//	printf("Score is  : %3d \n",EvalMax);
+	
+	AdrMax	= LocalMax;
+
+	return	EvalMax;
 }
 //------
 int		IsLastPass()
@@ -511,16 +572,12 @@ int		IsLastPass()
 		return	0;
 }
 //------
-void	SortPutOKList(int *AdrList)
+void	SortPutOKList(int *AdrList,int nn)
 {
 	int		i;
 	
-	i=0;
-	while(0 < PutOKList[i]){
+	for (i=0;i<nn;i++)
 		AdrList[i]	= PutOKList[i];
-		i++;
-	}
-	AdrList[i]	= PutOKList[i];
 }
 //------
 int		PutCheck(int Adr)
@@ -579,39 +636,40 @@ void	DispBan()
 {
 	int		x,y;
 	
-	CountBW();
-	
-	printf("  ");
-	for (x=0;x<8;x++)
-		printf("%s",Col[x]);
-	printf("\n");
-
-	for (y=0;y<8;y++){
-		printf("%s",Row[y]);
+	if (TraceMode == 0){
+		CountBW();
+		
+		printf("  ");
 		for (x=0;x<8;x++)
-			printf("%s",Koma[Ban[RowCol2Adr(y,x)]]);
-		switch (y){
-		case 0:
-			printf("\tOthello Ver 1.00 [Apr.07.2019]");
-			break;
-		case 2:
-			printf("\tNext turn is ");
-			if (NextTurn == 1)
-				printf("Black");
-			else
-				printf("White");
-			break;
-		case 4:
-			printf("\tBlack : %d",BlackCtr);
-			break;
-		case 5:
-			printf("\tWhite : %d",WhiteCtr);
-			break;
+			printf("%s",Col[x]);
+		printf("\n");
+
+		for (y=0;y<8;y++){
+			printf("%s",Row[y]);
+			for (x=0;x<8;x++)
+				printf("%s",Koma[Ban[RowCol2Adr(y,x)]]);
+			switch (y){
+			case 0:
+				printf("\tOthello Ver 1.00 [Apr.07.2019]");
+				break;
+			case 2:
+				printf("\tNext turn is ");
+				if (NextTurn == 1)
+					printf("Black");
+				else
+					printf("White");
+				break;
+			case 4:
+				printf("\tBlack : %d",BlackCtr);
+				break;
+			case 5:
+				printf("\tWhite : %d",WhiteCtr);
+				break;
+			}
+			printf("\n");
 		}
 		printf("\n");
 	}
-	printf("\n");
-	
 }
 
 //------
