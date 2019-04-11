@@ -66,6 +66,7 @@ int		MakePutOKList();
 int		ComThink(int no);
 int		ComThink_Random();
 int		ComThink_RandWin();
+int		ComThink_RSWin();
 void	InitBScore();
 int		ComThink_RScore();
 int		IsLastPass();
@@ -141,10 +142,10 @@ int		main(int argc,char *argv[])
 		if (StackPtr == 40)
 			TraceMode	=  0;
 		if (NextTurn == BLACK)
-			mv	= ComThink(1);
+			mv	= ComThink(4);
 //			mv	= GetMove();
 		else
-			mv	= ComThink(3);
+			mv	= ComThink(2);
 		
 		if (mvOld == ADR_PASS && mv == ADR_PASS){
 			mv	= CTRL_REQ_EXIT;
@@ -186,6 +187,9 @@ int		ComThink(int no)
 		break;
 	case 3:
 		ret	= ComThink_RandWin();
+		break;
+	case 4:
+		ret	= ComThink_RSWin();
 		break;
 	}
 	
@@ -252,6 +256,36 @@ int		ComThink_RScore()
 				RetAdr		= PutOKList[i];
 				MaxScore	= Score;
 			}
+		}
+	}
+	
+	return RetAdr;
+}
+//------
+int		ComThink_RSWin()
+{
+	int		RetAdr,nn,RndX,Score,MaxScore,i;
+
+	nn	= MakePutOKList();		// íÖéËâ¬î\ÉäÉXÉgçÏê¨
+	
+	if (nn == 0)
+		RetAdr	= ADR_PASS;
+	else {
+		if (StackPtr <48){
+			MaxScore	= -9999;
+			for (i=0;i<nn;i++){
+				Score	= BanScore[PutOKList[i]] + ( 3 &xor128());
+				if (MaxScore < Score){
+					RetAdr		= PutOKList[i];
+					MaxScore	= Score;
+				}
+			}
+		}
+		else{
+			int		winval;
+			winval	= GetWinEval();
+			printf("My score is %d\n",winval);
+			RetAdr	= AdrMax;
 		}
 	}
 	
