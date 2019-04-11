@@ -37,6 +37,7 @@ int			Ban[120],BanScore[120];
 char		Col[8][3]  = {"Ç`","Ça","Çb","Çc","Çd","Çe","Çf","Çg" };
 char		Row[8][3]  = {"ÇP","ÇQ","ÇR","ÇS","ÇT","ÇU","ÇV","ÇW" };
 char		Koma[3][3] = {". ","Åú","ÅZ"};
+char		NextChr[3][10] = {"NULL","Black","White"};
 int			Diff[10];
 int			StackPtr,NextTurn;
 int			NumDir[500],NumDirPtr[80];
@@ -71,8 +72,10 @@ void	InitBScore();
 int		ComThink_RScore();
 int		IsLastPass();
 void	CountBW();
-int			GetWinEval();
+int		GetWinEval();
 void	SortPutOKList(int *AdrList,int nn);
+int		GetMaxEval(int Max)	;
+
 
 //------
 int		main(int argc,char *argv[])
@@ -145,7 +148,7 @@ int		main(int argc,char *argv[])
 			mv	= ComThink(4);
 //			mv	= GetMove();
 		else
-			mv	= ComThink(2);
+			mv	= ComThink(1);
 		
 		if (mvOld == ADR_PASS && mv == ADR_PASS){
 			mv	= CTRL_REQ_EXIT;
@@ -262,9 +265,16 @@ int		ComThink_RScore()
 	return RetAdr;
 }
 //------
+void		DispMyScore(int score)
+{
+
+
+}
+//------
 int		ComThink_RSWin()
 {
 	int		RetAdr,nn,RndX,Score,MaxScore,i;
+	int		winval;
 
 	nn	= MakePutOKList();		// íÖéËâ¬î\ÉäÉXÉgçÏê¨
 	
@@ -281,10 +291,14 @@ int		ComThink_RSWin()
 				}
 			}
 		}
-		else{
-			int		winval;
+		else if (StackPtr <50){
 			winval	= GetWinEval();
-			printf("My score is %d\n",winval);
+			printf ("[%s] My Score is %d\n",NextChr[NextTurn],winval);
+			RetAdr	= AdrMax;
+		}
+		else{
+			winval	= GetMaxEval(-99);
+			printf ("[%s] My Score is %d\n",NextChr[NextTurn],winval);
 			RetAdr	= AdrMax;
 		}
 	}
@@ -512,6 +526,74 @@ void	PutExec(int Adr)
 }
 //------
 //
+//	äÆëSì«Ç›
+//
+//ç°âÒíÖéËâ¬î\à íuÇ»ÇµÅAÇ©Ç¬ëOâÒíÖéËâ¬î\à íuÇ»ÇµÇÃÇ∆Ç´ï]âøílÇï‘Ç∑
+//
+//ç°âÒÇÃíÖéËâ¬î\ÉäÉXÉgÇçÏê¨Ç∑ÇÈÅB
+//
+//íÖéËâ¬î\ÉäÉXÉgÇï¿Ç◊ë÷Ç¶ÇÈÅB
+//
+//	è„à Ç™ämï€ÇµÇƒÇ¢ÇÈÉXÉRÉA(MAX)Çí¥Ç¶ÇÈíÖéËÇ™Ç†ÇÍÇŒÅAë≈ÇøêÿÇË
+//  ÇªÇ§Ç≈Ç»Ç¢èÍçáÇÕMAXÇç≈ëÂÇ…Ç∑ÇÈéËÇíTÇ∑
+//
+int			GetMaxEval(int Max)		// ñﬂÇËílÇÕï]âøåãâ 
+{
+	int		LimitMax,nn,LocalMax,EvalMax,i,Eval;
+	int		SortAdrList[20];
+	
+	LimitMax	= - Max;
+
+	nn	= MakePutOKList();		// íÖéËâ¬î\ÉäÉXÉgçÏê¨
+
+	if (nn == 0) {
+//		printf(" pass\n");
+		if (IsLastPass()){
+			CountBW();
+			if (NextTurn == BLACK)
+				EvalMax	= BlackCtr - WhiteCtr;
+			else
+				EvalMax	= WhiteCtr - BlackCtr;
+		}
+		else {
+			PutExec(ADR_PASS);
+			EvalMax	= - GetMaxEval(LimitMax);
+			EraseExec();
+		}
+		LocalMax	= ADR_PASS;
+	}
+	else{
+		SortPutOKList(SortAdrList,nn);
+		
+		EvalMax	= -99;
+		LocalMax	= SortAdrList[0];
+		i = 0;
+		while (i<nn){
+			PutExec(SortAdrList[i]);
+			Eval	= - GetMaxEval(EvalMax);
+			EraseExec();
+			
+			if (EvalMax < Eval){
+				EvalMax	= Eval;
+				LocalMax	= SortAdrList[i];
+			}
+			if (LimitMax <= EvalMax )
+				i = 99;
+			else
+				i++;
+
+//			printf("select : %3d , ",LocalMax);
+//			printf("Score is  : %3d \n",EvalMax);
+		}
+	}
+
+	AdrMax	= LocalMax;
+//	printf("<< stack = %d \n",StackPtr);
+
+	return	EvalMax;
+}
+//------
+//
 //	ïKèüì«Ç›
 //
 //ç°âÒíÖéËâ¬î\à íuÇ»ÇµÅAÇ©Ç¬ëOâÒíÖéËâ¬î\à íuÇ»ÇµÇÃÇ∆Ç´ï]âøílÇï‘Ç∑
@@ -688,10 +770,11 @@ void	DispBan()
 				break;
 			case 2:
 				printf("\tNext turn is ");
-				if (NextTurn == 1)
-					printf("Black");
-				else
-					printf("White");
+				printf("%s",NextChr[NextTurn]);
+				//if (NextTurn == 1)
+				//	printf("Black");
+				//else
+			//		printf("White");
 				break;
 			case 4:
 				printf("\tBlack : %d",BlackCtr);
