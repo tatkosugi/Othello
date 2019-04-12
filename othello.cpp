@@ -51,6 +51,8 @@ int			AdrMax;
 //
 
 
+unsigned long 	xor128();
+void	InitBScore();
 int		RowCol2Adr(int row,int col);
 void	DispBan();
 void	CalcDiff();
@@ -60,7 +62,6 @@ void	PutExec(int Adr);
 void	DispND();
 int		GetMove();
 char	ToUpper(char cc);
-unsigned long 	xor128();
 void	MakeAdrList();
 void	EraseExec();
 int		MakePutOKList();
@@ -68,7 +69,6 @@ int		ComThink(int no);
 int		ComThink_Random();
 int		ComThink_RandWin();
 int		ComThink_RSWin();
-void	InitBScore();
 int		ComThink_RScore();
 int		IsLastPass();
 void	CountBW();
@@ -263,12 +263,6 @@ int		ComThink_RScore()
 	}
 	
 	return RetAdr;
-}
-//------
-void		DispMyScore(int score)
-{
-
-
 }
 //------
 int		ComThink_RSWin()
@@ -766,15 +760,11 @@ void	DispBan()
 				printf("%s",Koma[Ban[RowCol2Adr(y,x)]]);
 			switch (y){
 			case 0:
-				printf("\tOthello Ver 1.00 [Apr.07.2019]");
+				printf("\tOthello Ver 1.00 [Apr.12.2019]");
 				break;
 			case 2:
 				printf("\tNext turn is ");
 				printf("%s",NextChr[NextTurn]);
-				//if (NextTurn == 1)
-				//	printf("Black");
-				//else
-			//		printf("White");
 				break;
 			case 4:
 				printf("\tBlack : %d",BlackCtr);
