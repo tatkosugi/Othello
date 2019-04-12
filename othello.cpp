@@ -33,7 +33,7 @@
 
 //
 //
-int			Ban[120],BanScore[120];
+int			Ban[120],BanScore[120],BanScoreWk[120];
 char		Col[8][3]  = {"Ç`","Ça","Çb","Çc","Çd","Çe","Çf","Çg" };
 char		Row[8][3]  = {"ÇP","ÇQ","ÇR","ÇS","ÇT","ÇU","ÇV","ÇW" };
 char		Koma[3][3] = {". ","Åú","ÅZ"};
@@ -44,7 +44,8 @@ int			NumDir[500],NumDirPtr[80];
 int			AddrList[70];
 int			PutOKList[30];
 int			BlackCtr,WhiteCtr;
-int			ScoreTable[4][4] = { { 20,0,0,0 } , { -6,-6,0,0} , {4,8,12,0} , {6,10,18,0} };
+int			ScoreTable[4][4] 	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,10,12,0} , {6,9,18,0} };
+int			ScoreTableWk[4][4]	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,8,12,0} , {6,10,18,0} };
 int			TraceMode;
 int			AdrMax;
 
@@ -53,6 +54,7 @@ int			AdrMax;
 
 unsigned long 	xor128();
 void	InitBScore();
+void	InitBScoreWk();
 int		RowCol2Adr(int row,int col);
 void	DispBan();
 void	CalcDiff();
@@ -75,61 +77,53 @@ void	CountBW();
 int		GetWinEval();
 void	SortPutOKList(int *AdrList,int nn);
 int		GetMaxEval(int Max)	;
+int		ExecOneGame();
 
 
 //------
 int		main(int argc,char *argv[])
 {
-	int		x,y,mv,mvOld;
-	char	GetLoc[20];
 	time_t	ti;
 
 	CalcDiff();
 	MakeAdrList();
-
-	for (x=0;x<9;x++)
-		for(y=0;y<9;y++)
-			Ban[RowCol2Adr(x,y)]	= NULL;
-
-	StackPtr	= 0;
-	NumDirPtr[StackPtr]	= 0;
-	
-	Ban[RowCol2Adr(3,3)]	= BLACK;
-	Ban[RowCol2Adr(4,4)]	= BLACK;
-	Ban[RowCol2Adr(3,4)]	= WHITE;
-	Ban[RowCol2Adr(4,3)]	= WHITE;
-//
-//	Ban[RowCol2Adr(0,3)]	= WHITE;
-//	Ban[RowCol2Adr(0,4)]	= WHITE;
-//	Ban[RowCol2Adr(0,5)]	= WHITE;
-//
-//	Ban[RowCol2Adr(1,4)]	= WHITE;
-//	Ban[RowCol2Adr(1,5)]	= BLACK;
-//
-//	Ban[RowCol2Adr(2,3)]	= WHITE;
-//	Ban[RowCol2Adr(2,4)]	= WHITE;
-//	Ban[RowCol2Adr(2,5)]	= WHITE;
-//	Ban[RowCol2Adr(2,6)]	= WHITE;
-//
-//	Ban[RowCol2Adr(3,3)]	= WHITE;
-//	Ban[RowCol2Adr(3,4)]	= BLACK;
-//	Ban[RowCol2Adr(3,5)]	= BLACK;
-//
-//	Ban[RowCol2Adr(4,3)]	= WHITE;
-//	Ban[RowCol2Adr(4,4)]	= BLACK;
 
 	ti	= 0x3ff & time(NULL);
 	for (int i=0;i<ti;i++)
 		xor128();
 //
 	InitBScore();
+	InitBScoreWk();
 
 	TraceMode	=  1;
+
+	for (int i=0;i<20;i++)
+		ExecOneGame();
+
+	return EXIT_SUCCESS;
+}
+//------
+int		ExecOneGame()
+{
+	int		x,y,mv,mvOld;
+	char	GetLoc[20];
+
+	for (x=0;x<9;x++)
+		for(y=0;y<9;y++)
+			Ban[RowCol2Adr(x,y)]	= NULL;
+
+	Ban[RowCol2Adr(3,3)]	= BLACK;
+	Ban[RowCol2Adr(4,4)]	= BLACK;
+	Ban[RowCol2Adr(3,4)]	= WHITE;
+	Ban[RowCol2Adr(4,3)]	= WHITE;
+//
+	StackPtr	= 0;
+	NumDirPtr[StackPtr]	= 0;
 
 	StackPtr	++;
 	NextTurn	= BLACK;
 
-	printf("\n");
+//	printf("\n");
 	DispBan();
 
 //	PutCheckAll();
@@ -142,8 +136,8 @@ int		main(int argc,char *argv[])
 	while (mv < 99){
 		//PutCheckAll();
 		mvOld	= mv;
-		if (StackPtr == 40)
-			TraceMode	=  0;
+//		if (StackPtr == 40)
+//			TraceMode	=  0;
 		if (NextTurn == BLACK)
 			mv	= ComThink(4);
 //			mv	= GetMove();
@@ -174,7 +168,11 @@ int		main(int argc,char *argv[])
 
 	}
 
-	return EXIT_SUCCESS;
+	CountBW();
+	int		Result	= BlackCtr - WhiteCtr;
+	printf("Game Result : %d\n",Result);
+
+	return		Result;
 }
 //------
 int		ComThink(int no)
@@ -285,14 +283,14 @@ int		ComThink_RSWin()
 				}
 			}
 		}
-		else if (StackPtr <50){
-			winval	= GetWinEval();
-			printf ("[%s] My Score is %d\n",NextChr[NextTurn],winval);
-			RetAdr	= AdrMax;
-		}
+	//	else if (StackPtr <50){
+	//		winval	= GetWinEval();
+	//		printf ("[%s] My Score is %d\n",NextChr[NextTurn],winval);
+	//		RetAdr	= AdrMax;
+	//	}
 		else{
 			winval	= GetMaxEval(-99);
-			printf ("[%s] My Score is %d\n",NextChr[NextTurn],winval);
+//			printf ("[%s] My Score is %d\n",NextChr[NextTurn],winval);
 			RetAdr	= AdrMax;
 		}
 	}
@@ -312,6 +310,32 @@ int		MakePutOKList()
 		}
 
 	return nn;
+}
+//------
+void	InitBScoreWk()
+{
+	int		x,y,Adr;
+	
+	for (x=0;x<4;x++)
+		for (y=0;y<=x;y++){
+			Adr	= RowCol2Adr(x,y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(y,x);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - x ,y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - y ,x);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(x,7 - y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(y,7 - x);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - x,7 - y);
+			BanScore[Adr]	= ScoreTable[x][y];
+			Adr	= RowCol2Adr(7 - y,7 - x);
+			BanScore[Adr]	= ScoreTable[x][y];
+		}
+		
 }
 //------
 void	InitBScore()
