@@ -45,7 +45,7 @@ int			AddrList[70];
 int			PutOKList[30];
 int			BlackCtr,WhiteCtr;
 int			ScoreTable[4][4] 	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,10,12,0} , {9,6,18,0} };
-int			ScoreTableWk[4][4]	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,8,12,0} , {6,10,18,0} };
+int			ScoreTableWk[4][4]	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,10,12,0} , {11,6,18,0} };
 int			TraceMode;
 int			AdrMax;
 
@@ -71,6 +71,7 @@ int		ComThink(int no);
 int		ComThink_Random();
 int		ComThink_RandWin();
 int		ComThink_RSWin();
+int		ComThink_RSWinWK();
 int		ComThink_RScore();
 int		IsLastPass();
 void	CountBW();
@@ -139,10 +140,10 @@ int		ExecOneGame()
 //		if (StackPtr == 40)
 //			TraceMode	=  0;
 		if (NextTurn == BLACK)
-			mv	= ComThink(1);
+			mv	= ComThink(4);
 //			mv	= GetMove();
 		else
-			mv	= ComThink(4);
+			mv	= ComThink(5);
 		
 		if (mvOld == ADR_PASS && mv == ADR_PASS){
 			mv	= CTRL_REQ_EXIT;
@@ -191,6 +192,9 @@ int		ComThink(int no)
 		break;
 	case 4:
 		ret	= ComThink_RSWin();
+		break;
+	case 5:
+		ret	= ComThink_RSWinWK();
 		break;
 	}
 	
@@ -298,6 +302,35 @@ int		ComThink_RSWin()
 	return RetAdr;
 }
 //------
+int		ComThink_RSWinWK()
+{
+	int		RetAdr,nn,RndX,Score,MaxScore,i;
+	int		winval;
+
+	nn	= MakePutOKList();		// íÖéËâ¬î\ÉäÉXÉgçÏê¨
+	
+	if (nn == 0)
+		RetAdr	= ADR_PASS;
+	else {
+		if (StackPtr <48){
+			MaxScore	= -9999;
+			for (i=0;i<nn;i++){
+				Score	= BanScoreWk[PutOKList[i]] + ( 3 &xor128());
+				if (MaxScore < Score){
+					RetAdr		= PutOKList[i];
+					MaxScore	= Score;
+				}
+			}
+		}
+		else{
+			winval	= GetMaxEval(-99);
+			RetAdr	= AdrMax;
+		}
+	}
+	
+	return RetAdr;
+}
+//------
 int		MakePutOKList()
 {
 	int		nn,i;
@@ -319,21 +352,21 @@ void	InitBScoreWk()
 	for (x=0;x<4;x++)
 		for (y=0;y<=x;y++){
 			Adr	= RowCol2Adr(x,y);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 			Adr	= RowCol2Adr(y,x);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 			Adr	= RowCol2Adr(7 - x ,y);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 			Adr	= RowCol2Adr(7 - y ,x);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 			Adr	= RowCol2Adr(x,7 - y);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 			Adr	= RowCol2Adr(y,7 - x);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 			Adr	= RowCol2Adr(7 - x,7 - y);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 			Adr	= RowCol2Adr(7 - y,7 - x);
-			BanScore[Adr]	= ScoreTable[x][y];
+			BanScoreWk[Adr]	= ScoreTableWk[x][y];
 		}
 		
 }
