@@ -44,7 +44,7 @@ int			NumDir[500],NumDirPtr[80];
 int			AddrList[70];
 int			PutOKList[30];
 int			BlackCtr,WhiteCtr;
-int			ScoreTable[4][4] 	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,10,12,0} , {6,9,18,0} };
+int			ScoreTable[4][4] 	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,10,12,0} , {9,6,18,0} };
 int			ScoreTableWk[4][4]	= { { 20,0,0,0 } , { -6,-6,0,0} , {4,8,12,0} , {6,10,18,0} };
 int			TraceMode;
 int			AdrMax;
@@ -139,10 +139,10 @@ int		ExecOneGame()
 //		if (StackPtr == 40)
 //			TraceMode	=  0;
 		if (NextTurn == BLACK)
-			mv	= ComThink(4);
+			mv	= ComThink(1);
 //			mv	= GetMove();
 		else
-			mv	= ComThink(1);
+			mv	= ComThink(4);
 		
 		if (mvOld == ADR_PASS && mv == ADR_PASS){
 			mv	= CTRL_REQ_EXIT;
