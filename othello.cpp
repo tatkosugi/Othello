@@ -79,6 +79,7 @@ int		GetWinEval();
 void	SortPutOKList(int *AdrList,int nn);
 int		GetMaxEval(int Max)	;
 int		ExecOneGame();
+void	MiddleEval();
 
 
 //------
@@ -139,6 +140,8 @@ int		ExecOneGame()
 		mvOld	= mv;
 //		if (StackPtr == 40)
 //			TraceMode	=  0;
+//		if (StackPtr == 48)
+//			MiddleEval();
 		if (NextTurn == BLACK)
 			mv	= ComThink(4);
 //			mv	= GetMove();
@@ -329,6 +332,15 @@ int		ComThink_RSWinWK()
 	}
 	
 	return RetAdr;
+}
+//------
+void	MiddleEval()
+{
+//	printf("Next turn   : %s\n",NextChr[NextTurn]);
+//	printf("Stack       : %d\n",StackPtr);
+	printf("íÖéËâ¬î\êî  : %d\n",MakePutOKList());
+//	CountBW();
+//	printf("B/W         : %d , %d\n",BlackCtr,WhiteCtr);
 }
 //------
 int		MakePutOKList()
